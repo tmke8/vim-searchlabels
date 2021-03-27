@@ -1,13 +1,10 @@
 " NOTES:
 "   problem:  cchar cannot be more than 1 character.
 "   strategy: make fg/bg the same color, then conceal the other char.
-"
-"   problem:  [before 7.4.792] keyword highlight takes priority over conceal.
-"   strategy: syntax clear | [do the conceal] | let &syntax=s:o_syntax
 
-let g:searchtags#target_labels = get(g:, 'searchtags#target_labels', ";sftunq/SFGHLTUNRMQZ?0")
+"Labels should be keys that you never use after searching.
+let g:searchlabels#target_labels = get(g:, 'searchlabels#target_labels', "n;,uftq/FGHLTUNRMQZ?0")
 
-let s:clear_syntax = !has('patch-7.4.792')
 let s:matchmap = {}
 let s:match_ids = []
 let s:orig_conceal_matches = []
@@ -25,12 +22,8 @@ endif
 func! s:placematch(c, pos) abort
   let s:matchmap[a:c] = a:pos
   let pat = '\%'.a:pos[0].'l\%'.a:pos[1].'c.'
-  if s:clear_syntax
-    exec "syntax match SneakLabel '".pat."' conceal cchar=".a:c
-  else
-    let id = matchadd('Conceal', pat, 999, -1, { 'conceal': a:c })
-    call add(s:match_ids, id)
-  endif
+  let id = matchadd('Conceal', pat, 999, -1, { 'conceal': a:c })
+  call add(s:match_ids, id)
 endf
 
 func! s:save_conceal_matches() abort
@@ -52,7 +45,7 @@ func! s:restore_conceal_matches() abort
   let s:orig_conceal_matches = []
 endf
 
-func! searchtags#label#to(s, v, label) abort
+func! searchlabels#label#to(s, v, label) abort
   let seq = ""
   while 1
     let choice = s:do_label(a:s, a:v, a:s._reverse, a:label)
@@ -77,7 +70,7 @@ func! s:do_label(s, v, reverse, label) abort "{{{
   while 1
     " searchpos() is faster than 'norm! /'
     let p = searchpos(search_pattern, a:s.search_options_no_s, a:s.get_stopline())
-    let skippedfold = searchtags#util#skipfold(p[0], a:reverse) "Note: 'set foldopen-=search' does not affect search().
+    let skippedfold = searchlabels#util#skipfold(p[0], a:reverse) "Note: 'set foldopen-=search' does not affect search().
 
     if 0 == p[0] || -1 == skippedfold
       break
@@ -86,7 +79,7 @@ func! s:do_label(s, v, reverse, label) abort "{{{
     endif
 
     if i < s:maxmarks
-      let c = s:strchar(g:searchtags#target_labels, i)
+      let c = s:strchar(g:searchlabels#target_labels, i)
       call s:placematch(c, p)
     else "we have exhausted the target labels; grab the first non-labeled match.
       let overflow = p
@@ -97,26 +90,26 @@ func! s:do_label(s, v, reverse, label) abort "{{{
   endwhile
 
   call winrestview(w) | redraw
-  let choice = empty(a:label) ? searchtags#util#getchar() : a:label
+  let choice = empty(a:label) ? searchlabels#util#getchar() : a:label
   call s:after()
 
   let mappedto = maparg(choice, a:v ? 'x' : 'n')
-  let mappedtoNext = (g:searchtags#opt.absolute_dir && a:reverse)
-        \ ? mappedto =~# '<Plug>Sneak\(_,\|Previous\)'
-        \ : mappedto =~# '<Plug>Sneak\(_;\|Next\)'
+  let mappedtoNext = (g:searchlabels#opt.absolute_dir && a:reverse)
+        \ ? mappedto =~# '<Plug>Sneak\(_N\|Previous\)'
+        \ : mappedto =~# '<Plug>Sneak\(_n\|Next\)'
 
   if choice =~# "\\v^\<Tab>|\<S-Tab>|\<BS>$"  " Decorate next N matches.
     if (!a:reverse && choice ==# "\<Tab>") || (a:reverse && choice =~# "^\<S-Tab>\\|\<BS>$")
       call cursor(overflow[0], overflow[1])
     endif  " ...else we just switched directions, do not overflow.
-  elseif (strlen(g:searchtags#opt.label_esc) && choice ==# g:searchtags#opt.label_esc)
+  elseif (strlen(g:searchlabels#opt.label_esc) && choice ==# g:searchlabels#opt.label_esc)
         \ || -1 != index(["\<Esc>", "\<C-c>"], choice)
     return "\<Esc>" "exit label-mode.
   elseif !mappedtoNext && !has_key(s:matchmap, choice) "press _any_ invalid key to escape.
     call feedkeys(choice) "exit label-mode and fall through to Vim.
     return ""
   else "valid target was selected
-    let p = mappedtoNext ? s:matchmap[s:strchar(g:searchtags#target_labels, 0)] : s:matchmap[choice]
+    let p = mappedtoNext ? s:matchmap[s:strchar(g:searchlabels#target_labels, 0)] : s:matchmap[choice]
     call cursor(p[0], p[1])
   endif
 
@@ -132,17 +125,6 @@ func! s:after() abort
   exec 'hi! link Conceal '.s:orig_hl_conceal
   call s:restore_conceal_matches()
   exec 'hi! link Sneak '.s:orig_hl_sneak
-
-  if s:clear_syntax
-    let &l:synmaxcol=s:o_synmaxcol
-    " Always clear before restore, in case user has `:syntax off`. #200
-    syntax clear
-    silent! let &l:foldmethod=s:o_fdm
-    silent! let &l:syntax=s:o_syntax
-    " Force Vim to reapply 'spell' (must set 'spelllang'). #110
-    let [&l:spell,&l:spelllang]=[s:o_spell,s:o_spelllang]
-    call s:restore_conceal_in_other_windows()
-  endif
 
   let [&l:concealcursor,&l:conceallevel]=[s:o_cocu,s:o_cole]
 endf
@@ -176,23 +158,9 @@ func! s:before() abort
   " Highlight the cursor location (because cursor is hidden during getchar()).
   let s:sneak_cursor_hl = matchadd("SneakScope", '\%#', 11, -1)
 
-  if s:clear_syntax
-    setlocal nospell
-    " Prevent highlighting in other windows showing the same buffer.
-    ownsyntax sneak_label
-    " Avoid broken folds when we clear syntax below.
-    if &l:foldmethod ==# 'syntax'
-      setlocal foldmethod=manual
-    endif
-    syntax clear
-    " This is fast because we cleared syntax.  Allows Sneak to work on very long wrapped lines.
-    setlocal synmaxcol=0
-    call s:disable_conceal_in_other_windows()
-  endif
-
-  let s:orig_hl_conceal = searchtags#util#links_to('Conceal')
+  let s:orig_hl_conceal = searchlabels#util#links_to('Conceal')
   call s:save_conceal_matches()
-  let s:orig_hl_sneak   = searchtags#util#links_to('Sneak')
+  let s:orig_hl_sneak   = searchlabels#util#links_to('Sneak')
   "set temporary link to our custom 'conceal' highlight
   hi! link Conceal SneakLabel
   "set temporary link to hide the sneak search targets
@@ -208,25 +176,25 @@ endf
 func! s:is_special_key(key) abort
   return -1 != index(["\<Esc>", "\<C-c>", "\<Space>", "\<CR>", "\<Tab>"], a:key)
     \ || maparg(a:key, 'n') =~# '<Plug>Sneak\(_;\|_,\|Next\|Previous\)'
-    \ || (g:searchtags#opt.s_next && maparg(a:key, 'n') =~# '<Plug>Sneak\(_s\|Forward\)')
+    \ || (g:searchlabels#opt.s_next && maparg(a:key, 'n') =~# '<Plug>Sneak\(_s\|Forward\)')
 endf
 
 " We must do this because:
 "  - Don't know which keys the user assigned to Sneak_;/Sneak_,
 "  - Must reserve special keys like <Esc> and <Tab>
-func! searchtags#label#sanitize_target_labels() abort
-  let nrbytes = len(g:searchtags#target_labels)
+func! searchlabels#label#sanitize_target_labels() abort
+  let nrbytes = len(g:searchlabels#target_labels)
   let i = 0
   while i < nrbytes
     " Intentionally using byte-index for use with substitute().
-    let k = strpart(g:searchtags#target_labels, i, 1)
+    let k = strpart(g:searchlabels#target_labels, i, 1)
     if s:is_special_key(k) "remove the char
-      let g:searchtags#target_labels = substitute(g:searchtags#target_labels, '\%'.(i+1).'c.', '', '')
-      " Move ; (or s if 'clever-s' is enabled) to the front.
-      if !g:searchtags#opt.absolute_dir
-            \ && ((!g:searchtags#opt.s_next && maparg(k, 'n') =~# '<Plug>Sneak\(_;\|Next\)')
+      let g:searchlabels#target_labels = substitute(g:searchlabels#target_labels, '\%'.(i+1).'c.', '', '')
+      " Move n (or s if 'clever-s' is enabled) to the front.
+      if !g:searchlabels#opt.absolute_dir
+            \ && ((!g:searchlabels#opt.s_next && maparg(k, 'n') =~# '<Plug>Sneak\(_;\|Next\)')
             \     || (maparg(k, 'n') =~# '<Plug>Sneak\(_s\|Forward\)'))
-        let g:searchtags#target_labels = k . g:searchtags#target_labels
+        let g:searchlabels#target_labels = k . g:searchlabels#target_labels
       else
         let nrbytes -= 1
         continue
@@ -236,5 +204,5 @@ func! searchtags#label#sanitize_target_labels() abort
   endwhile
 endf
 
-call searchtags#label#sanitize_target_labels()
-let s:maxmarks = searchtags#util#strlen(g:searchtags#target_labels)
+call searchlabels#label#sanitize_target_labels()
+let s:maxmarks = searchlabels#util#strlen(g:searchlabels#target_labels)

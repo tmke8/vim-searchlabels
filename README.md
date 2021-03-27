@@ -1,4 +1,4 @@
-searchtags.vim
+searchlabels.vim
 ==============
 
 Fork of [sneak.vim](http://github.com/justinmk/vim-sneak)

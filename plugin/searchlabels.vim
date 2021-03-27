@@ -24,44 +24,44 @@ if exists('##OptionSet')
   augroup END
 endif
 
-func! searchtags#init() abort
-  unlockvar g:searchtags#opt
+func! searchlabels#init() abort
+  unlockvar g:searchlabels#opt
   "options                                 v-- for backwards-compatibility
-  let g:searchtags#opt = { 'f_reset' : get(g:, 'searchtags#nextprev_f', get(g:, 'searchtags#f_reset', 1))
-      \ ,'t_reset'      : get(g:, 'searchtags#nextprev_t', get(g:, 'searchtags#t_reset', 1))
-      \ ,'s_next'       : get(g:, 'searchtags#s_next', 0)
-      \ ,'absolute_dir' : get(g:, 'searchtags#absolute_dir', 0)
-      \ ,'use_ic_scs'   : get(g:, 'searchtags#use_ic_scs', 0)
-      \ ,'map_netrw'    : get(g:, 'searchtags#map_netrw', 1)
-      \ ,'label'        : get(g:, 'searchtags#label', get(g:, 'searchtags#streak', 0)) && (v:version >= 703) && has("conceal")
-      \ ,'label_esc'    : get(g:, 'searchtags#label_esc', get(g:, 'searchtags#streak_esc', "\<space>"))
-      \ ,'prompt'       : get(g:, 'searchtags#prompt', '>')
+  let g:searchlabels#opt = { 'f_reset' : get(g:, 'searchlabels#nextprev_f', get(g:, 'searchlabels#f_reset', 1))
+      \ ,'t_reset'      : get(g:, 'searchlabels#nextprev_t', get(g:, 'searchlabels#t_reset', 1))
+      \ ,'s_next'       : get(g:, 'searchlabels#s_next', 0)
+      \ ,'absolute_dir' : get(g:, 'searchlabels#absolute_dir', 0)
+      \ ,'use_ic_scs'   : get(g:, 'searchlabels#use_ic_scs', 1)
+      \ ,'map_netrw'    : get(g:, 'searchlabels#map_netrw', 1)
+      \ ,'label'        : get(g:, 'searchlabels#label', get(g:, 'searchlabels#streak', 0)) && (v:version >= 703) && has("conceal")
+      \ ,'label_esc'    : get(g:, 'searchlabels#label_esc', get(g:, 'searchlabels#streak_esc', "\<space>"))
+      \ ,'prompt'       : get(g:, 'searchlabels#prompt', '>')
       \ }
 
   for k in ['f', 't'] "if user mapped f/t to Sneak, then disable f/t reset.
     if maparg(k, 'n') =~# 'Sneak'
-      let g:searchtags#opt[k.'_reset'] = 0
+      let g:searchlabels#opt[k.'_reset'] = 0
     endif
   endfor
-  lockvar g:searchtags#opt
+  lockvar g:searchlabels#opt
 endf
 
-call searchtags#init()
+call searchlabels#init()
 
-func! searchtags#state() abort
+func! searchlabels#state() abort
   return deepcopy(s:st)
 endf
 
-func! searchtags#is_sneaking() abort
-  return exists("#searchtags#CursorMoved")
+func! searchlabels#is_sneaking() abort
+  return exists("#searchlabels#CursorMoved")
 endf
 
-func! searchtags#cancel() abort
-  call searchtags#util#removehl()
+func! searchlabels#cancel() abort
+  call searchlabels#util#removehl()
   augroup sneak
     autocmd!
   augroup END
-  if maparg('<esc>', 'n') =~# 'searchtags#cancel' "teardown temporary <esc> mapping
+  if maparg('<esc>', 'n') =~# 'searchlabels#cancel' "teardown temporary <esc> mapping
     silent! unmap <esc>
   endif
   return ''
@@ -75,11 +75,11 @@ augroup sneakysneak
 augroup END
 
 func! s:delayed_call(reverse) abort
-    call timer_start(0, {-> searchtags#wrap('', a:reverse)})
+    call timer_start(0, {-> searchlabels#wrap('', a:reverse)})
 endf
 
 " Entrypoint for `s`.
-func! searchtags#wrap(op, reverse) abort
+func! searchlabels#wrap(op, reverse) abort
   " get last search
   let input = @/
   let [cnt, reg] = [v:count1, v:register] "get count and register before doing _anything_, else they get overwritten.
@@ -90,7 +90,7 @@ func! searchtags#wrap(op, reverse) abort
     redraw
   endif
   " highlight matches
-  call searchtags#to(a:op, input, inputlen, cnt, reg, 0, a:reverse)
+  call searchlabels#to(a:op, input, inputlen, cnt, reg, 0, a:reverse)
   if exists('#User#SneakLeave')
     doautocmd <nomodeline> User SneakLeave
   endif
@@ -99,19 +99,19 @@ endf
 " Repeats the last motion.
 func! s:rpt(op, reverse) abort
   if s:st.rst "reset by f/F/t/T
-    exec "norm! ".(searchtags#util#isvisualop(a:op) ? "gv" : "").v:count1.(a:reverse ? "," : ";")
+    exec "norm! ".(searchlabels#util#isvisualop(a:op) ? "gv" : "").v:count1.(a:reverse ? "," : ";")
     return
   endif
 
   let l:relative_reverse = (a:reverse && !s:st.reverse) || (!a:reverse && s:st.reverse)
-  call searchtags#to(a:op, s:st.input, s:st.inputlen, v:count1, v:register, 1,
-        \ (g:searchtags#opt.absolute_dir ? a:reverse : l:relative_reverse), s:st.inclusive, 0)
+  call searchlabels#to(a:op, s:st.input, s:st.inputlen, v:count1, v:register, 1,
+        \ (g:searchlabels#opt.absolute_dir ? a:reverse : l:relative_reverse), s:st.inclusive, 0)
 endf
 
 " input:      may be shorter than inputlen if the user pressed <enter> at the prompt.
 " inclusive:  0: t-like, 1: f-like, 2: /-like
-func! searchtags#to(op, input, inputlen, count, register, repeatmotion, reverse) abort "{{{
-  let s = g:searchtags#search#instance
+func! searchlabels#to(op, input, inputlen, count, register, repeatmotion, reverse) abort "{{{
+  let s = g:searchlabels#search#instance
   call s.init(a:input, a:repeatmotion, a:reverse)
 
   let l:gt_lt = a:reverse ? '<' : '>'
@@ -150,18 +150,15 @@ func! searchtags#to(op, input, inputlen, count, register, repeatmotion, reverse)
 
   "find out if there were matches
   let matchpos = s.dosearch()
-  if 0 == max(matchpos)
-    break
-  endif
 
   if 0 == max(matchpos)
     let km = empty(&keymap) ? '' : ' ('.&keymap.' keymap)'
-    call searchtags#util#echo('not found'.(max(bounds) ? printf(km.' (in columns %d-%d): %s', bounds[0], bounds[1], a:input) : km.': '.a:input))
+    call searchlabels#util#echo('not found'.(max(bounds) ? printf(km.' (in columns %d-%d): %s', bounds[0], bounds[1], a:input) : km.': '.a:input))
     return
   endif
   "search succeeded
 
-  call searchtags#util#removehl()
+  call searchlabels#util#removehl()
 
   let curlin = string(line('.'))
   let curcol = string(virtcol('.') + (a:reverse ? -1 : 1))
@@ -190,10 +187,10 @@ func! searchtags#to(op, input, inputlen, count, register, repeatmotion, reverse)
   " If a:label is a string set it as the target, without prompting.
   let label = ''
   let target = (!empty(label) || (s.hasmatches(1))) && !max(bounds)
-        \ ? searchtags#label#to(s, 0, label) : ""
+        \ ? searchlabels#label#to(s, 0, label) : ""
 
   if '' != target
-    call searchtags#util#removehl()
+    call searchlabels#util#removehl()
   endif
 
 endf "}}}
@@ -201,15 +198,15 @@ endf "}}}
 func! s:attach_autocmds() abort
   augroup sneak
     autocmd!
-    autocmd InsertEnter,WinLeave,BufLeave * call searchtags#cancel()
+    autocmd InsertEnter,WinLeave,BufLeave * call searchlabels#cancel()
     "_nested_ autocmd to skip the _first_ CursorMoved event.
     "NOTE: CursorMoved is _not_ triggered if there is typeahead during a macro/script...
-    autocmd CursorMoved * autocmd sneak CursorMoved * call searchtags#cancel()
+    autocmd CursorMoved * autocmd sneak CursorMoved * call searchlabels#cancel()
   augroup END
 endf
 
 
-onoremap <silent> <Plug>SneakRepeat :<c-u>call searchtags#wrap(v:operator, searchtags#util#getc(), searchtags#util#getc(), searchtags#util#getc(), searchtags#util#getc())<cr>
+onoremap <silent> <Plug>SneakRepeat :<c-u>call searchlabels#wrap(v:operator, searchlabels#util#getc(), searchlabels#util#getc(), searchlabels#util#getc(), searchlabels#util#getc())<cr>
 
 " repeat motion (explicit--as opposed to implicit 'clever-s')
 nnoremap <silent> <Plug>Sneak_; :<c-u>call <SID>rpt('', 0)<cr>
@@ -219,24 +216,24 @@ xnoremap <silent> <Plug>Sneak_, :<c-u>call <SID>rpt(visualmode(), 1)<cr>
 onoremap <silent> <Plug>Sneak_; :<c-u>call <SID>rpt(v:operator, 0)<cr>
 onoremap <silent> <Plug>Sneak_, :<c-u>call <SID>rpt(v:operator, 1)<cr>
 
-if !hasmapto('<Plug>Sneak_;', 'n') && !hasmapto('<Plug>SneakNext', 'n') && mapcheck(';', 'n') ==# ''
-  nmap ; <Plug>Sneak_;
-  omap ; <Plug>Sneak_;
-  xmap ; <Plug>Sneak_;
-endif
-if !hasmapto('<Plug>Sneak_,', 'n') && !hasmapto('<Plug>SneakPrevious', 'n')
-  if mapcheck(',', 'n') ==# ''
-    nmap , <Plug>Sneak_,
-    omap , <Plug>Sneak_,
-    xmap , <Plug>Sneak_,
-  elseif mapcheck('\', 'n') ==# '' || mapcheck('\', 'n') ==# ','
-    nmap \ <Plug>Sneak_,
-    omap \ <Plug>Sneak_,
-    xmap \ <Plug>Sneak_,
-  endif
-endif
+" if !hasmapto('<Plug>Sneak_;', 'n') && !hasmapto('<Plug>SneakNext', 'n') && mapcheck(';', 'n') ==# ''
+"   nmap ; <Plug>Sneak_;
+"   omap ; <Plug>Sneak_;
+"   xmap ; <Plug>Sneak_;
+" endif
+" if !hasmapto('<Plug>Sneak_,', 'n') && !hasmapto('<Plug>SneakPrevious', 'n')
+"   if mapcheck(',', 'n') ==# ''
+"     nmap , <Plug>Sneak_,
+"     omap , <Plug>Sneak_,
+"     xmap , <Plug>Sneak_,
+"   elseif mapcheck('\', 'n') ==# '' || mapcheck('\', 'n') ==# ','
+"     nmap \ <Plug>Sneak_,
+"     omap \ <Plug>Sneak_,
+"     xmap \ <Plug>Sneak_,
+"   endif
+" endif
 
-if g:searchtags#opt.map_netrw && -1 != stridx(maparg("s", "n"), "Sneak")
+if g:searchlabels#opt.map_netrw && -1 != stridx(maparg("s", "n"), "Sneak")
   func! s:map_netrw_key(key) abort
     let expanded_map = maparg(a:key,'n')
     if !strlen(expanded_map) || expanded_map =~# '_Net\|FileBeagle'

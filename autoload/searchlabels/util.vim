@@ -1,25 +1,25 @@
 if v:version >= 703
-  func! searchtags#util#strlen(s) abort
+  func! searchlabels#util#strlen(s) abort
     return strwidth(a:s)
     "return call('strdisplaywidth', a:000)
   endf
 else
-  func! searchtags#util#strlen(s) abort
+  func! searchlabels#util#strlen(s) abort
     return strlen(substitute(a:s, ".", "x", "g"))
   endf
 endif
 
-func! searchtags#util#isvisualop(op) abort
+func! searchlabels#util#isvisualop(op) abort
   return a:op =~# "^[vV\<C-v>]"
 endf
 
-func! searchtags#util#getc() abort
+func! searchlabels#util#getc() abort
   let c = getchar()
   return type(c) == type(0) ? nr2char(c) : c
 endf
 
-func! searchtags#util#getchar() abort
-  let input = searchtags#util#getc()
+func! searchlabels#util#getchar() abort
+  let input = searchlabels#util#getc()
   if 1 != &iminsert
     return input
   endif
@@ -32,7 +32,7 @@ func! searchtags#util#getchar() abort
     elseif full_keymap ==# partial_keymap_seq
       return full_keymap
     endif
-    let c = searchtags#util#getc()
+    let c = searchlabels#util#getc()
     if c == "\<Esc>" || c == "\<CR>"
       "if the short sequence has a valid mapping, return that.
       if !empty(full_keymap)
@@ -47,12 +47,12 @@ func! searchtags#util#getchar() abort
 endf
 
 "returns 1 if the string contains an uppercase char. [unicode-compatible]
-func! searchtags#util#has_upper(s) abort
+func! searchlabels#util#has_upper(s) abort
  return -1 != match(a:s, '\C[[:upper:]]')
 endf
 
 "displays a message that will dissipate at the next opportunity.
-func! searchtags#util#echo(msg) abort
+func! searchlabels#util#echo(msg) abort
   redraw | echo a:msg
   augroup sneak_echo
     autocmd!
@@ -63,7 +63,7 @@ endf
 "returns the least possible 'wincol'
 "  - if 'sign' column is displayed, the least 'wincol' is 3
 "  - there is (apparently) no clean way to detect if 'sign' column is visible
-func! searchtags#util#wincol1() abort
+func! searchlabels#util#wincol1() abort
   let w = winsaveview()
   norm! 0
   let c = wincol()
@@ -76,7 +76,7 @@ endf
 "     1  if the cursor was moved
 "     0  if the cursor is not in a fold
 "    -1  if the start/end of the fold is at/above/below the edge of the window
-func! searchtags#util#skipfold(current_line, reverse) abort
+func! searchlabels#util#skipfold(current_line, reverse) abort
   let foldedge = a:reverse ? foldclosed(a:current_line) : foldclosedend(a:current_line)
   if -1 != foldedge
     if (a:reverse && foldedge <= line("w0")) "fold starts at/above top of window.
@@ -91,7 +91,7 @@ func! searchtags#util#skipfold(current_line, reverse) abort
 endf
 
 " Moves the cursor 1 char to the left or right; wraps at EOL, but _not_ EOF.
-func! searchtags#util#nudge(right) abort
+func! searchlabels#util#nudge(right) abort
   let nextchar = searchpos('\_.', 'nW'.(a:right ? '' : 'b'))
   if [0, 0] == nextchar
     return 0
@@ -101,13 +101,13 @@ func! searchtags#util#nudge(right) abort
 endf
 
 " Removes highlighting.
-func! searchtags#util#removehl() abort
+func! searchlabels#util#removehl() abort
   silent! call matchdelete(w:sneak_hl_id)
   silent! call matchdelete(w:sneak_sc_hl)
 endf
 
 " Gets the 'links to' value of the specified highlight group, if any.
-func! searchtags#util#links_to(hlgroup) abort
+func! searchlabels#util#links_to(hlgroup) abort
   redir => hl | exec 'silent highlight '.a:hlgroup | redir END
   let s = substitute(matchstr(hl, 'links to \zs.*'), '\s', '', 'g')
   return empty(s) ? 'NONE' : s
