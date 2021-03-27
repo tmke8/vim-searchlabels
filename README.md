@@ -1,7 +1,7 @@
 searchtags.vim
 ==============
 
-Fork of sneak.vim that hooks the label mode into vim's native search.
+Fork of sneak.vim that hooks sneak's label mode into vim's native search.
 
 It's is essentially a light-weight re-implementation of
 [incsearch-easymotion.vim](https://github.com/haya14busa/incsearch-easymotion.vim)
