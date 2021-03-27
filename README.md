@@ -1,5 +1,7 @@
 searchlabels.vim
-==============
+================
+
+> Label mode for search.
 
 Fork of [sneak.vim](http://github.com/justinmk/vim-sneak)
 that hooks sneak's label mode into vim's native search.
@@ -20,9 +22,9 @@ Install
 -------
 
 - [vim-plug](https://github.com/junegunn/vim-plug)
-  - `Plug 'thomkeh/vim-searchtags', { 'branch': 'main' }`
+  - `Plug 'thomkeh/vim-searchlabels', { 'branch': 'main' }`
 - [Pathogen](https://github.com/tpope/vim-pathogen)
-  - `git clone git://github.com/thomkeh/vim-searchtags.git ~/.vim/bundle/vim-sneak`
+  - `git clone git://github.com/thomkeh/vim-searchlabels.git ~/.vim/bundle/vim-sneak`
 - Manual installation:
   - Copy the files to your `.vim` directory.
 
