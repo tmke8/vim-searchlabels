@@ -54,9 +54,9 @@ endf
 "displays a message that will dissipate at the next opportunity.
 func! searchlabels#util#echo(msg) abort
   redraw | echo a:msg
-  augroup sneak_echo
+  augroup searchlabels_echo
     autocmd!
-    autocmd CursorMoved,InsertEnter,WinLeave,BufLeave * redraw | echo '' | autocmd! sneak_echo
+    autocmd CursorMoved,InsertEnter,WinLeave,BufLeave * redraw | echo '' | autocmd! searchlabels_echo
   augroup END
 endf
 
@@ -102,8 +102,8 @@ endf
 
 " Removes highlighting.
 func! searchlabels#util#removehl() abort
-  silent! call matchdelete(w:sneak_hl_id)
-  silent! call matchdelete(w:sneak_sc_hl)
+  silent! call matchdelete(w:searchlabels_hl_id)
+  silent! call matchdelete(w:searchlabels_sc_hl)
 endf
 
 " Gets the 'links to' value of the specified highlight group, if any.
@@ -119,27 +119,27 @@ func! s:default_color(hlgroup, what, mode) abort
 endfunc
 
 func! s:init_hl() abort
-  exec "highlight default Sneak guifg=white guibg=magenta ctermfg=white ctermbg=".(&t_Co < 256 ? "magenta" : "201")
+  exec "highlight default Searchlabels guifg=white guibg=magenta ctermfg=white ctermbg=".(&t_Co < 256 ? "magenta" : "201")
 
   if &background ==# 'dark'
-    highlight default SneakScope guifg=black guibg=white ctermfg=0     ctermbg=255
+    highlight default SearchlabelsScope guifg=black guibg=white ctermfg=0     ctermbg=255
   else
-    highlight default SneakScope guifg=white guibg=black ctermfg=255   ctermbg=0
+    highlight default SearchlabelsScope guifg=white guibg=black ctermfg=255   ctermbg=0
   endif
 
-  let guibg   = s:default_color('Sneak', 'bg', 'gui')
-  let guifg   = s:default_color('Sneak', 'fg', 'gui')
-  let ctermbg = s:default_color('Sneak', 'bg', 'cterm')
-  let ctermfg = s:default_color('Sneak', 'fg', 'cterm')
-  exec 'highlight default SneakLabel gui=bold cterm=bold guifg='.guifg.' guibg='.guibg.' ctermfg='.ctermfg.' ctermbg='.ctermbg
+  let guibg   = s:default_color('Searchlabels', 'bg', 'gui')
+  let guifg   = s:default_color('Searchlabels', 'fg', 'gui')
+  let ctermbg = s:default_color('Searchlabels', 'bg', 'cterm')
+  let ctermfg = s:default_color('Searchlabels', 'fg', 'cterm')
+  exec 'highlight default SearchlabelsLabel gui=bold cterm=bold guifg='.guifg.' guibg='.guibg.' ctermfg='.ctermfg.' ctermbg='.ctermbg
 
-  let guibg   = s:default_color('SneakLabel', 'bg', 'gui')
-  let ctermbg = s:default_color('SneakLabel', 'bg', 'cterm')
+  let guibg   = s:default_color('SearchlabelsLabel', 'bg', 'gui')
+  let ctermbg = s:default_color('SearchlabelsLabel', 'bg', 'cterm')
   " fg same as bg
-  exec 'highlight default SneakLabelMask guifg='.guibg.' guibg='.guibg.' ctermfg='.ctermbg.' ctermbg='.ctermbg
+  exec 'highlight default SearchlabelsLabelMask guifg='.guibg.' guibg='.guibg.' ctermfg='.ctermbg.' ctermbg='.ctermbg
 endf
 
-augroup sneak_colorscheme  " Re-init on :colorscheme change at runtime. #108
+augroup searchlabels_colorscheme  " Re-init on :colorscheme change at runtime. #108
   autocmd!
   autocmd ColorScheme * call <sid>init_hl()
 augroup END

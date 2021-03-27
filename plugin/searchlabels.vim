@@ -1,12 +1,12 @@
-" sneak.vim - The missing motion
+" searchlabels.vim - The missing motion
 " Author:       Justin M. Keyes
 " Version:      1.8
 " License:      MIT
 
-if exists('g:loaded_sneak_plugin') || &compatible || v:version < 700
+if exists('g:loaded_searchlabels_plugin') || &compatible || v:version < 700
   finish
 endif
-let g:loaded_sneak_plugin = 1
+let g:loaded_searchlabels_plugin = 1
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -18,7 +18,7 @@ let s:st = { 'rst':1, 'input':'', 'inputlen':0, 'reverse':0, 'bounds':[0,0],
       \'inclusive':0, 'label':'', 'opfunc':'', 'opfunc_st':{} }
 
 if exists('##OptionSet')
-  augroup sneak_optionset
+  augroup searchlabels_optionset
     autocmd!
     autocmd OptionSet operatorfunc let s:st.opfunc = &operatorfunc | let s:st.opfunc_st = {}
   augroup END
@@ -32,14 +32,13 @@ func! searchlabels#init() abort
       \ ,'s_next'       : get(g:, 'searchlabels#s_next', 0)
       \ ,'absolute_dir' : get(g:, 'searchlabels#absolute_dir', 0)
       \ ,'use_ic_scs'   : get(g:, 'searchlabels#use_ic_scs', 1)
-      \ ,'map_netrw'    : get(g:, 'searchlabels#map_netrw', 1)
       \ ,'label'        : get(g:, 'searchlabels#label', get(g:, 'searchlabels#streak', 0)) && (v:version >= 703) && has("conceal")
       \ ,'label_esc'    : get(g:, 'searchlabels#label_esc', get(g:, 'searchlabels#streak_esc', "\<space>"))
       \ ,'prompt'       : get(g:, 'searchlabels#prompt', '>')
       \ }
 
   for k in ['f', 't'] "if user mapped f/t to Sneak, then disable f/t reset.
-    if maparg(k, 'n') =~# 'Sneak'
+    if maparg(k, 'n') =~# 'Searchlabels'
       let g:searchlabels#opt[k.'_reset'] = 0
     endif
   endfor
@@ -58,7 +57,7 @@ endf
 
 func! searchlabels#cancel() abort
   call searchlabels#util#removehl()
-  augroup sneak
+  augroup searchlabels
     autocmd!
   augroup END
   if maparg('<esc>', 'n') =~# 'searchlabels#cancel' "teardown temporary <esc> mapping
@@ -78,21 +77,21 @@ func! s:delayed_call(reverse) abort
     call timer_start(0, {-> searchlabels#wrap('', a:reverse)})
 endf
 
-" Entrypoint for `s`.
+" Entrypoint.
 func! searchlabels#wrap(op, reverse) abort
   " get last search
   let input = @/
   let [cnt, reg] = [v:count1, v:register] "get count and register before doing _anything_, else they get overwritten.
-  let inputlen = strchars(input)
+  let inputlen = searchlabels#util#strlen(input)
 
-  if exists('#User#SneakEnter')
-    doautocmd <nomodeline> User SneakEnter
+  if exists('#User#SearchlabelsEnter')
+    doautocmd <nomodeline> User SearchlabelsEnter
     redraw
   endif
   " highlight matches
   call searchlabels#to(a:op, input, inputlen, cnt, reg, 0, a:reverse)
-  if exists('#User#SneakLeave')
-    doautocmd <nomodeline> User SneakLeave
+  if exists('#User#SearchlabelsLeave')
+    doautocmd <nomodeline> User SearchlabelsLeave
   endif
 endf
 
@@ -108,8 +107,6 @@ func! s:rpt(op, reverse) abort
         \ (g:searchlabels#opt.absolute_dir ? a:reverse : l:relative_reverse), s:st.inclusive, 0)
 endf
 
-" input:      may be shorter than inputlen if the user pressed <enter> at the prompt.
-" inclusive:  0: t-like, 1: f-like, 2: /-like
 func! searchlabels#to(op, input, inputlen, count, register, repeatmotion, reverse) abort "{{{
   let s = g:searchlabels#search#instance
   call s.init(a:input, a:repeatmotion, a:reverse)
@@ -173,14 +170,14 @@ func! searchlabels#to(op, input, inputlen, count, register, repeatmotion, revers
 
   "highlight the vertical 'tunnel' that the search is scoped-to
   if max(bounds) "perform the scoped highlight...
-    let w:sneak_sc_hl = matchadd('SneakScope', l:scope_pattern)
+    let w:searchlabels_sc_hl = matchadd('SearchlabelsScope', l:scope_pattern)
   endif
 
   call s:attach_autocmds()
 
   "highlight actual matches at or below the cursor position
   "  - store in w: because matchadd() highlight is per-window.
-  let w:sneak_hl_id = matchadd('Sneak',
+  let w:searchlabels_hl_id = matchadd('Searchlabels',
         \ (s.prefix).(s.match_pattern).(s.search).'\|'.curln_pattern.(s.search))
 
   " Operators always invoke label-mode.
@@ -196,61 +193,42 @@ func! searchlabels#to(op, input, inputlen, count, register, repeatmotion, revers
 endf "}}}
 
 func! s:attach_autocmds() abort
-  augroup sneak
+  augroup searchlabels
     autocmd!
     autocmd InsertEnter,WinLeave,BufLeave * call searchlabels#cancel()
     "_nested_ autocmd to skip the _first_ CursorMoved event.
     "NOTE: CursorMoved is _not_ triggered if there is typeahead during a macro/script...
-    autocmd CursorMoved * autocmd sneak CursorMoved * call searchlabels#cancel()
+    autocmd CursorMoved * autocmd searchlabels CursorMoved * call searchlabels#cancel()
   augroup END
 endf
 
 
-onoremap <silent> <Plug>SneakRepeat :<c-u>call searchlabels#wrap(v:operator, searchlabels#util#getc(), searchlabels#util#getc(), searchlabels#util#getc(), searchlabels#util#getc())<cr>
+onoremap <silent> <Plug>SearchlabelsRepeat :<c-u>call searchlabels#wrap(v:operator, searchlabels#util#getc(), searchlabels#util#getc(), searchlabels#util#getc(), searchlabels#util#getc())<cr>
 
 " repeat motion (explicit--as opposed to implicit 'clever-s')
-nnoremap <silent> <Plug>Sneak_; :<c-u>call <SID>rpt('', 0)<cr>
-nnoremap <silent> <Plug>Sneak_, :<c-u>call <SID>rpt('', 1)<cr>
-xnoremap <silent> <Plug>Sneak_; :<c-u>call <SID>rpt(visualmode(), 0)<cr>
-xnoremap <silent> <Plug>Sneak_, :<c-u>call <SID>rpt(visualmode(), 1)<cr>
-onoremap <silent> <Plug>Sneak_; :<c-u>call <SID>rpt(v:operator, 0)<cr>
-onoremap <silent> <Plug>Sneak_, :<c-u>call <SID>rpt(v:operator, 1)<cr>
+nnoremap <silent> <Plug>Searchlabels_; :<c-u>call <SID>rpt('', 0)<cr>
+nnoremap <silent> <Plug>Searchlabels_, :<c-u>call <SID>rpt('', 1)<cr>
+xnoremap <silent> <Plug>Searchlabels_; :<c-u>call <SID>rpt(visualmode(), 0)<cr>
+xnoremap <silent> <Plug>Searchlabels_, :<c-u>call <SID>rpt(visualmode(), 1)<cr>
+onoremap <silent> <Plug>Searchlabels_; :<c-u>call <SID>rpt(v:operator, 0)<cr>
+onoremap <silent> <Plug>Searchlabels_, :<c-u>call <SID>rpt(v:operator, 1)<cr>
 
-" if !hasmapto('<Plug>Sneak_;', 'n') && !hasmapto('<Plug>SneakNext', 'n') && mapcheck(';', 'n') ==# ''
-"   nmap ; <Plug>Sneak_;
-"   omap ; <Plug>Sneak_;
-"   xmap ; <Plug>Sneak_;
+" if !hasmapto('<Plug>Searchlabels_;', 'n') && !hasmapto('<Plug>SearchlabelsNext', 'n') && mapcheck(';', 'n') ==# ''
+"   nmap ; <Plug>Searchlabels_;
+"   omap ; <Plug>Searchlabels_;
+"   xmap ; <Plug>Searchlabels_;
 " endif
-" if !hasmapto('<Plug>Sneak_,', 'n') && !hasmapto('<Plug>SneakPrevious', 'n')
+" if !hasmapto('<Plug>Searchlabels_,', 'n') && !hasmapto('<Plug>SearchlabelsPrevious', 'n')
 "   if mapcheck(',', 'n') ==# ''
-"     nmap , <Plug>Sneak_,
-"     omap , <Plug>Sneak_,
-"     xmap , <Plug>Sneak_,
+"     nmap , <Plug>Searchlabels_,
+"     omap , <Plug>Searchlabels_,
+"     xmap , <Plug>Searchlabels_,
 "   elseif mapcheck('\', 'n') ==# '' || mapcheck('\', 'n') ==# ','
-"     nmap \ <Plug>Sneak_,
-"     omap \ <Plug>Sneak_,
-"     xmap \ <Plug>Sneak_,
+"     nmap \ <Plug>Searchlabels_,
+"     omap \ <Plug>Searchlabels_,
+"     xmap \ <Plug>Searchlabels_,
 "   endif
 " endif
-
-if g:searchlabels#opt.map_netrw && -1 != stridx(maparg("s", "n"), "Sneak")
-  func! s:map_netrw_key(key) abort
-    let expanded_map = maparg(a:key,'n')
-    if !strlen(expanded_map) || expanded_map =~# '_Net\|FileBeagle'
-      if strlen(expanded_map) > 0 "else, mapped to <nop>
-        silent exe (expanded_map =~# '<Plug>' ? 'nmap' : 'nnoremap').' <buffer> <silent> <leader>'.a:key.' '.expanded_map
-      endif
-      "unmap the default buffer-local mapping to allow Sneak's global mapping.
-      silent! exe 'nunmap <buffer> '.a:key
-    endif
-  endf
-
-  augroup sneak_netrw
-    autocmd!
-    autocmd FileType netrw,filebeagle autocmd sneak_netrw CursorMoved <buffer>
-          \ call <sid>map_netrw_key('s') | call <sid>map_netrw_key('S') | autocmd! sneak_netrw * <buffer>
-  augroup END
-endif
 
 
 let &cpo = s:cpo_save

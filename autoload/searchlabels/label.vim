@@ -95,8 +95,8 @@ func! s:do_label(s, v, reverse, label) abort "{{{
 
   let mappedto = maparg(choice, a:v ? 'x' : 'n')
   let mappedtoNext = (g:searchlabels#opt.absolute_dir && a:reverse)
-        \ ? mappedto =~# '<Plug>Sneak\(_N\|Previous\)'
-        \ : mappedto =~# '<Plug>Sneak\(_n\|Next\)'
+        \ ? mappedto =~# '<Plug>Searchlabels\(_N\|Previous\)'
+        \ : mappedto =~# '<Plug>Searchlabels\(_n\|Next\)'
 
   if choice =~# "\\v^\<Tab>|\<S-Tab>|\<BS>$"  " Decorate next N matches.
     if (!a:reverse && choice ==# "\<Tab>") || (a:reverse && choice =~# "^\<S-Tab>\\|\<BS>$")
@@ -117,14 +117,14 @@ func! s:do_label(s, v, reverse, label) abort "{{{
 endf "}}}
 
 func! s:after() abort
-  autocmd! sneak_label_cleanup
-  try | call matchdelete(s:sneak_cursor_hl) | catch | endtry
+  autocmd! searchlabels_label_cleanup
+  try | call matchdelete(s:searchlabels_cursor_hl) | catch | endtry
   call map(s:match_ids, 'matchdelete(v:val)')
   let s:match_ids = []
   "remove temporary highlight links
   exec 'hi! link Conceal '.s:orig_hl_conceal
   call s:restore_conceal_matches()
-  exec 'hi! link Sneak '.s:orig_hl_sneak
+  exec 'hi! link Searchlabels '.s:orig_hl_searchlabels
 
   let [&l:concealcursor,&l:conceallevel]=[s:o_cocu,s:o_cole]
 endf
@@ -133,7 +133,7 @@ func! s:disable_conceal_in_other_windows() abort
   for w in range(1, winnr('$'))
     if 'help' !=# getwinvar(w, '&buftype') && w != winnr()
         \ && empty(getbufvar(winbufnr(w), 'dirvish'))
-      call setwinvar(w, 'sneak_orig_cl', getwinvar(w, '&conceallevel'))
+      call setwinvar(w, 'searchlabels_orig_cl', getwinvar(w, '&conceallevel'))
       call setwinvar(w, '&conceallevel', 0)
     endif
   endfor
@@ -142,7 +142,7 @@ func! s:restore_conceal_in_other_windows() abort
   for w in range(1, winnr('$'))
     if 'help' !=# getwinvar(w, '&buftype') && w != winnr()
         \ && empty(getbufvar(winbufnr(w), 'dirvish'))
-      call setwinvar(w, '&conceallevel', getwinvar(w, 'sneak_orig_cl'))
+      call setwinvar(w, '&conceallevel', getwinvar(w, 'searchlabels_orig_cl'))
     endif
   endfor
 endf
@@ -156,17 +156,17 @@ func! s:before() abort
   setlocal concealcursor=ncv conceallevel=2
 
   " Highlight the cursor location (because cursor is hidden during getchar()).
-  let s:sneak_cursor_hl = matchadd("SneakScope", '\%#', 11, -1)
+  let s:searchlabels_cursor_hl = matchadd("SearchlabelsScope", '\%#', 11, -1)
 
   let s:orig_hl_conceal = searchlabels#util#links_to('Conceal')
   call s:save_conceal_matches()
-  let s:orig_hl_sneak   = searchlabels#util#links_to('Sneak')
+  let s:orig_hl_searchlabels   = searchlabels#util#links_to('Searchlabels')
   "set temporary link to our custom 'conceal' highlight
-  hi! link Conceal SneakLabel
+  hi! link Conceal SearchlabelsLabel
   "set temporary link to hide the sneak search targets
-  hi! link Sneak SneakLabelMask
+  hi! link Searchlabels SearchlabelsLabelMask
 
-  augroup sneak_label_cleanup
+  augroup searchlabels_label_cleanup
     autocmd!
     autocmd CursorMoved * call <sid>after()
   augroup END
@@ -175,12 +175,12 @@ endf
 "returns 1 if a:key is invisible or special.
 func! s:is_special_key(key) abort
   return -1 != index(["\<Esc>", "\<C-c>", "\<Space>", "\<CR>", "\<Tab>"], a:key)
-    \ || maparg(a:key, 'n') =~# '<Plug>Sneak\(_;\|_,\|Next\|Previous\)'
-    \ || (g:searchlabels#opt.s_next && maparg(a:key, 'n') =~# '<Plug>Sneak\(_s\|Forward\)')
+    \ || maparg(a:key, 'n') =~# '<Plug>Searchlabels\(_;\|_,\|Next\|Previous\)'
+    \ || (g:searchlabels#opt.s_next && maparg(a:key, 'n') =~# '<Plug>Searchlabels\(_s\|Forward\)')
 endf
 
 " We must do this because:
-"  - Don't know which keys the user assigned to Sneak_;/Sneak_,
+"  - Don't know which keys the user assigned to Searchlabels_;/Searchlabels_,
 "  - Must reserve special keys like <Esc> and <Tab>
 func! searchlabels#label#sanitize_target_labels() abort
   let nrbytes = len(g:searchlabels#target_labels)
@@ -192,8 +192,8 @@ func! searchlabels#label#sanitize_target_labels() abort
       let g:searchlabels#target_labels = substitute(g:searchlabels#target_labels, '\%'.(i+1).'c.', '', '')
       " Move n (or s if 'clever-s' is enabled) to the front.
       if !g:searchlabels#opt.absolute_dir
-            \ && ((!g:searchlabels#opt.s_next && maparg(k, 'n') =~# '<Plug>Sneak\(_;\|Next\)')
-            \     || (maparg(k, 'n') =~# '<Plug>Sneak\(_s\|Forward\)'))
+            \ && ((!g:searchlabels#opt.s_next && maparg(k, 'n') =~# '<Plug>Searchlabels\(_;\|Next\)')
+            \     || (maparg(k, 'n') =~# '<Plug>Searchlabels\(_s\|Forward\)'))
         let g:searchlabels#target_labels = k . g:searchlabels#target_labels
       else
         let nrbytes -= 1
