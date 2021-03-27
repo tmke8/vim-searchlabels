@@ -3,23 +3,23 @@ searchtags.vim
 
 Fork of sneak.vim that hooks the label mode into vim's native search.
 
-Usage
------
-
-Just search something with `/`, and if there are multiple matches visible in your windows,
-labels will appear that allow you to jump directly to any of the matches.
-
-This is essentially a light-weight re-implementation of
+It's is essentially a light-weight re-implementation of
 [incsearch-easymotion.vim](https://github.com/haya14busa/incsearch-easymotion.vim)
 and [easymotion](https://github.com/easymotion/vim-easymotion)'s n-character search motion.
 One shortcoming with those is that they don't have regex support.
 As this plugin only hooks in at the end of vim's native search, you get vim's full power.
 
+Usage
+-----
+
+Just search something with `/`, and if there are multiple matches visible in your window,
+labels will appear that allow you to jump directly to any of the matches.
+
 Install
 -------
 
 - [vim-plug](https://github.com/junegunn/vim-plug)
-  - `Plug 'thomkeh/vim-searchtags'`
+  - `Plug 'thomkeh/vim-searchtags', { 'branch': 'main' }`
 - [Pathogen](https://github.com/tpope/vim-pathogen)
   - `git clone git://github.com/thomkeh/vim-searchtags.git ~/.vim/bundle/vim-sneak`
 - Manual installation:
@@ -30,7 +30,7 @@ FAQ
 
 ### Why not use Sneak?
 
-First, I find two characters often too limited in narrowing down my search.
+First, I find two characters often too limited for narrowing down my search.
 Second, I don't see the point of using `s`/`S` when I already use `/`/`?` a lot.
 
 Related
