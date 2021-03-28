@@ -186,9 +186,9 @@ func! searchlabels#to(op, input, inputlen, count, register, repeatmotion, revers
   let target = (!empty(label) || (s.hasmatches(1))) && !max(bounds)
         \ ? searchlabels#label#to(s, 0, label) : ""
 
-  if '' != target
-    call searchlabels#util#removehl()
-  endif
+  " if '' != target
+  call searchlabels#util#removehl()
+  " endif
 
 endf "}}}
 
@@ -198,7 +198,8 @@ func! s:attach_autocmds() abort
     autocmd InsertEnter,WinLeave,BufLeave * call searchlabels#cancel()
     "_nested_ autocmd to skip the _first_ CursorMoved event.
     "NOTE: CursorMoved is _not_ triggered if there is typeahead during a macro/script...
-    autocmd CursorMoved * autocmd searchlabels CursorMoved * call searchlabels#cancel()
+    " autocmd CursorMoved * autocmd searchlabels CursorMoved * call searchlabels#cancel()
+    autocmd CursorMoved * call searchlabels#cancel()
   augroup END
 endf
 
