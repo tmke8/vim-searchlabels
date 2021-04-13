@@ -1,6 +1,6 @@
-" searchlabels.vim - The missing motion
-" Author:       Justin M. Keyes
-" Version:      1.8
+" searchlabels.vim - Jump to search results
+" Author:       Thomas M. Kehrenberg
+" Version:      0.1
 " License:      MIT
 
 if exists('g:loaded_searchlabels_plugin') || &compatible || v:version < 700
@@ -68,13 +68,15 @@ endf
 
 
 augroup sneakysneak
-    au!
-    au CmdlineLeave / call s:delayed_call(0)
-    au CmdlineLeave \? call s:delayed_call(1)
+  au!
+  au CmdlineLeave / call s:delayed_call(0)
+  au CmdlineLeave \? call s:delayed_call(1)
 augroup END
 
 func! s:delayed_call(reverse) abort
+  if !v:event.abort
     call timer_start(0, {-> searchlabels#wrap('', a:reverse)})
+  endif
 endf
 
 " Entrypoint.
